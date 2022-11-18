@@ -4,6 +4,6 @@ summary: 'Getting hard coded data mimicking MaxMind GeoIP databases and pass it 
 
 type: middleware
 
-testData:
+testData: {}
 
 import: github.com/clydevassallo/traefikgeoip2
