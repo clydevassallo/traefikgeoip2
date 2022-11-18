@@ -58,14 +58,9 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code go.mod
-          # git diff --exit-code go.sum
-          # go mod download
-          # go mod vendor
-          # git diff --exit-code ./vendor/
 
       - name: Lint and Tests
         run: |
-          make prepare
           make
 
       - name: Run tests with Yaegi

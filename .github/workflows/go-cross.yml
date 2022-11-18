@@ -40,5 +40,4 @@ jobs:
 
       - name: Test
         run: |
-          make prepare
           go test -v -cover ./...
