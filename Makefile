@@ -13,7 +13,6 @@ test:
 yaegi_test:
 	yaegi test -v .	
 
-
 clean:
 	# rm -rf ./vendor
 	rm -rf *.mmdb
