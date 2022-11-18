@@ -9,13 +9,13 @@ import (
 
 // Config the plugin configuration.
 type Config struct {
-		// ...
+		Test string
 }
 
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
-		// ...
+		Test: "hello",
 	}
 }
 

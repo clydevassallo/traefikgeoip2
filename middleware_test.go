@@ -16,6 +16,7 @@ const (
 
 func TestGeoIPFromRemoteAddr(t *testing.T) {
 	mwCfg := mw.CreateConfig()
+	mwCfg.Test = "Hello"
 	
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
 	instance, _ := mw.New(context.TODO(), next, mwCfg, "traefik-geoip2")
