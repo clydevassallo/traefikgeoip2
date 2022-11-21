@@ -3,6 +3,7 @@ package traefikgeoip2
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/IncSW/geoip2"
 )
+
+var lookupCache LookupGeoIP2
 
 // Config the plugin configuration.
 type Config struct {
@@ -33,32 +36,9 @@ type TraefikGeoIP2 struct {
 
 // New created a new TraefikGeoIP2 plugin.
 func New(ctx context.Context, next http.Handler, cfg *Config, name string) (http.Handler, error) {
-	if _, err := os.Stat(cfg.DBPath); err != nil {
-		log.Printf("[geoip2] DB `%s' not found: %v", cfg.DBPath, err)
-		return &TraefikGeoIP2{
-			lookup: nil,
-			next:   next,
-			name:   name,
-		}, nil
-	}
-
-	var lookup LookupGeoIP2
-	if strings.Contains(cfg.DBPath, "City") {
-		rdr, err := geoip2.NewCityReaderFromFile(cfg.DBPath)
-		if err != nil {
-			log.Printf("[geoip2] DB `%s' not initialized: %v", cfg.DBPath, err)
-		} else {
-			lookup = CreateCityDBLookup(rdr)
-		}
-	}
-
-	if strings.Contains(cfg.DBPath, "Country") {
-		rdr, err := geoip2.NewCountryReaderFromFile(cfg.DBPath)
-		if err != nil {
-			log.Printf("[geoip2] DB `%s' not initialized: %v", cfg.DBPath, err)
-		} else {
-			lookup = CreateCountryDBLookup(rdr)
-		}
+	lookup, err := getLookup(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	return &TraefikGeoIP2{
@@ -100,4 +80,44 @@ func (mw *TraefikGeoIP2) ServeHTTP(reqWr http.ResponseWriter, req *http.Request)
 	req.Header.Set(CityHeader, res.city)
 
 	mw.next.ServeHTTP(reqWr, req)
+}
+
+// ClearCache resets GeoIP2 DB cache.
+func ClearCache() {
+	lookupCache = nil
+}
+
+func getLookup(cfg *Config) (LookupGeoIP2, error) {
+	if lookupCache != nil {
+		return lookupCache, nil
+	}
+
+	if _, err := os.Stat(cfg.DBPath); err != nil {
+		log.Printf("[geoip2] DB `%s' not found: %v", cfg.DBPath, err)
+		return lookupCache, nil
+	}
+
+	if strings.Contains(cfg.DBPath, "City") {
+		rdr, err := geoip2.NewCityReaderFromFile(cfg.DBPath)
+		if err != nil {
+			log.Printf("[geoip2] DB `%s' not initialized: %v", cfg.DBPath, err)
+			return nil, fmt.Errorf("%w", err)
+		}
+
+		lookupCache = CreateCityDBLookup(rdr)
+		log.Printf("[geoip2] DB city `%s' was initialized", cfg.DBPath)
+		return lookupCache, nil
+	}
+
+	if strings.Contains(cfg.DBPath, "Country") {
+		rdr, err := geoip2.NewCountryReaderFromFile(cfg.DBPath)
+		if err != nil {
+			log.Printf("[geoip2] DB `%s' not initialized: %v", cfg.DBPath, err)
+			return nil, fmt.Errorf("%w", err)
+		}
+		lookupCache = CreateCountryDBLookup(rdr)
+		log.Printf("[geoip2] DB country `%s' was initialized", cfg.DBPath)
+	}
+
+	return lookupCache, nil
 }

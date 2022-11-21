@@ -16,7 +16,7 @@ const (
 )
 
 func TestGeoIPConfig(t *testing.T) {
-	mwCfg := mw.CreateConfig()
+	mwCfg := setupConfig()
 	if mw.DefaultDBPath != mwCfg.DBPath {
 		t.Fatalf("Incorrect path")
 	}
@@ -35,7 +35,7 @@ func TestGeoIPConfig(t *testing.T) {
 }
 
 func TestGeoIPBasic(t *testing.T) {
-	mwCfg := mw.CreateConfig()
+	mwCfg := setupConfig()
 	mwCfg.DBPath = "./GeoLite2-City.mmdb"
 
 	called := false
@@ -59,7 +59,7 @@ func TestGeoIPBasic(t *testing.T) {
 }
 
 func TestMissingGeoIPDB(t *testing.T) {
-	mwCfg := mw.CreateConfig()
+	mwCfg := setupConfig()
 	mwCfg.DBPath = "./missing"
 
 	called := false
@@ -86,7 +86,7 @@ func TestMissingGeoIPDB(t *testing.T) {
 }
 
 func TestGeoIPFromRemoteAddr(t *testing.T) {
-	mwCfg := mw.CreateConfig()
+	mwCfg := setupConfig()
 	mwCfg.DBPath = "./GeoLite2-City.mmdb"
 
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
@@ -115,7 +115,7 @@ func TestGeoIPFromRemoteAddr(t *testing.T) {
 }
 
 func TestGeoIPCountryDBFromRemoteAddr(t *testing.T) {
-	mwCfg := mw.CreateConfig()
+	mwCfg := setupConfig()
 	mwCfg.DBPath = "./GeoLite2-Country.mmdb"
 
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
@@ -133,6 +133,11 @@ func TestGeoIPCountryDBFromRemoteAddr(t *testing.T) {
 func assertHeader(t *testing.T, req *http.Request, key, expected string) {
 	t.Helper()
 	if req.Header.Get(key) != expected {
-		t.Fatalf("invalid value of header [%s] != %s", key, req.Header.Get(key))
+		t.Fatalf("invalid value of header [%s] != %s ... Expected %s", key, req.Header.Get(key), expected)
 	}
+}
+
+func setupConfig() *mw.Config {
+	mw.ClearCache()
+	return mw.CreateConfig()
 }
